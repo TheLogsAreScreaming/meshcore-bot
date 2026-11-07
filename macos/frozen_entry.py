@@ -26,7 +26,7 @@ def packaging_smoke():
     for name in discovered:
         __import__(f'modules.commands.{name}')
     assert (root / 'web_viewer/templates/base.html').is_file()
-    assert (root / 'web_viewer/static/css/halloween.css').is_file()
+    assert (root / 'web_viewer/static/css/theme.css').is_file()
     assert (root.parent / 'translations').is_dir()
     assert (root.parent / 'data').is_dir()
     print(f'Packaging smoke passed: {len(discovered)} command modules, web viewer and assets')

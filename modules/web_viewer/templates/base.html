@@ -12,8 +12,11 @@
     <!-- Apply theme immediately to prevent flash -->
     <script nonce="{{ g.csp_nonce }}">
         (function () {
-            const storedTheme = localStorage.getItem('theme');
-            const theme = storedTheme || 'dark';
+            // Follow the system appearance until the user picks a theme with the toggle.
+            let storedTheme = null;
+            try { storedTheme = localStorage.getItem('theme'); } catch { /* storage blocked */ }
+            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            const theme = storedTheme || systemTheme;
             document.documentElement.setAttribute('data-theme', theme);
         })();
     </script>
@@ -399,19 +402,20 @@
         }
     </style>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/halloween.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" aria-label="Main">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">
                 <i class="fas fa-satellite-dish"></i> {{ bot_name|default('MeshCore Bot') }}
             </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Show navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
@@ -509,13 +513,13 @@
                     <div class="nav-item me-3">
                         <button class="dark-mode-toggle" id="dark-mode-toggle" aria-label="Toggle dark mode"
                             title="Toggle dark mode">
-                            <i class="fas fa-moon" id="dark-mode-icon"></i>
+                            <i class="fas fa-moon" id="dark-mode-icon" aria-hidden="true"></i>
                         </button>
                     </div>
                     <div class="nav-item">
                         <span class="navbar-text">
-                            <span class="status-indicator" id="connection-status"></span>
-                            <span id="connection-text">Disconnected</span>
+                            <span class="status-indicator" id="connection-status" aria-hidden="true"></span>
+                            <span id="connection-text" role="status" aria-live="polite">Disconnected</span>
                         </span>
                     </div>
                 </div>
@@ -867,13 +871,13 @@
         // Dark Mode Management
         class DarkModeManager {
             constructor() {
-                this.theme = this.getStoredTheme() || 'dark';
+                this.theme = this.getStoredTheme() || this.getSystemPreference();
                 this.applyTheme();
                 this.setupToggle();
             }
 
             getStoredTheme() {
-                return localStorage.getItem('theme');
+                try { return localStorage.getItem('theme'); } catch { return null; }
             }
 
             getSystemPreference() {
@@ -882,7 +886,7 @@
 
             setTheme(theme) {
                 this.theme = theme;
-                localStorage.setItem('theme', theme);
+                try { localStorage.setItem('theme', theme); } catch { /* storage blocked */ }
                 this.applyTheme();
             }
 
@@ -890,6 +894,8 @@
                 const root = document.documentElement;
                 if (this.theme === 'dark') {
                     root.setAttribute('data-theme', 'dark');
+                    const toggle = document.getElementById('dark-mode-toggle');
+                    if (toggle) { toggle.setAttribute('aria-label', 'Switch to light mode'); toggle.title = 'Switch to light mode'; }
                     const icon = document.getElementById('dark-mode-icon');
                     if (icon) {
                         icon.classList.remove('fa-moon');
@@ -897,6 +903,8 @@
                     }
                 } else {
                     root.setAttribute('data-theme', 'light');
+                    const toggle = document.getElementById('dark-mode-toggle');
+                    if (toggle) { toggle.setAttribute('aria-label', 'Switch to dark mode'); toggle.title = 'Switch to dark mode'; }
                     const icon = document.getElementById('dark-mode-icon');
                     if (icon) {
                         icon.classList.remove('fa-sun');
@@ -922,6 +930,7 @@
                 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
                     // Only apply system preference if user hasn't set a preference
                     if (!this.getStoredTheme()) {
+                        this.theme = e.matches ? 'dark' : 'light';
                         this.applyTheme();
                     }
                 });

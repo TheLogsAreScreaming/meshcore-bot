@@ -12,11 +12,11 @@ A Python bot that connects to MeshCore mesh networks via serial port, BLE, or TC
 
 ## Intel Mac desktop app (x86_64)
 
-This fork includes a **click-to-open native macOS control center** for Intel Macs. It bundles the bot runtime and provides a dark graphite interface with status, live activity, and quick actions for **Start Bot**, **Stop Bot**, **Edit Config**, **Dashboard**, and **Bot Folder**. No separate Python installation is required for the packaged app.
+This fork includes a **click-to-open native macOS control center** for Intel Macs. It bundles the bot runtime and provides a native sidebar window — **Overview**, **Radio & Connection**, **Configuration**, **Activity Log** and **Help & Files** — that follows the system Light/Dark appearance. You can start and stop the bot, pick your radio's USB port from a list, edit `config.ini` in place, restore the previous backup, and open the local dashboard. No separate Python installation is required for the packaged app.
 
-**Get the latest build:** [Build Intel Mac Desktop App — GitHub Actions](https://github.com/BaconDisk22/meshcore-bot/actions/workflows/build-intel-mac.yml). Open a successful run on `main`, download the `MeshCore-Bot-Intel-Mac` artifact, unzip it, open the DMG, and move **MeshCore Bot.app** to Applications. Artifacts expire after 14 days. See the [full Intel Mac setup guide](macos/README-MAC.md).
+**Get the latest build:** [Build Intel Mac Desktop App — GitHub Actions](https://github.com/TheLogsAreScreaming/meshcore-bot/actions/workflows/build-intel-mac.yml). Open a successful run on `main`, download the `MeshCore-Bot-Intel-Mac` artifact, unzip it, open the DMG, and move **MeshCore Bot.app** to Applications. Artifacts expire after 14 days. See the [full Intel Mac setup guide](macos/README-MAC.md).
 
-**Configuration:** Click **Edit Config** for the built-in plain-text editor, then save and restart the bot. The app stores its local configuration under `~/Library/Application Support/MeshCore Bot/`. The **Dashboard** button opens the local web viewer once the bot and web viewer are running.
+**Configuration:** Choose how the bot reaches your radio on **Radio & Connection**, or edit every setting on **Configuration** (⌘S saves, a backup is kept). Restart the bot to apply changes. The app stores its local configuration under `~/Library/Application Support/MeshCore Bot/`. **Open Dashboard** opens the local web viewer while the bot is running.
 
 **Security and testing:** The macOS build is ad-hoc signed, **not notarized**. If macOS blocks it, use System Settings → Privacy & Security → Open Anyway only after verifying the build source. Automated packaging and regression checks pass on CI, but actual radio communication and the previously reported editor/quit issues still require confirmation on an Intel Mac. **No stable release is claimed.**
 

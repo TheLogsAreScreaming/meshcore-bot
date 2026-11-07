@@ -6,6 +6,27 @@ semantic versioning.
 
 ## [Unreleased]
 
+### Changed
+
+- Intel Mac app redesigned: sidebar navigation with Overview, Radio &
+  Connection, Configuration, Activity Log and Help & Files pages; follows the
+  system Light/Dark appearance; standard menu bar and keyboard shortcuts;
+  guided radio setup with a detected USB port list; in-window config editor
+  with Revert and Restore Backup; colored log levels and log export.
+- Web dashboard uses one token-based theme (`theme.css`) for every page in
+  light and dark, replacing the seasonal Halloween palette, and follows the
+  system appearance until a theme is chosen.
+
+### Fixed
+
+- Mac app: copy, paste and undo now work in the config editor (no Edit menu
+  before); sidebar items are clickable; the startup log shows the data folder
+  path instead of a literal escape sequence; smart quotes can no longer corrupt
+  config values; unsaved edits prompt before closing; a bot stuck in shutdown
+  is force-stopped after 15 seconds.
+- Web dashboard: changing the system appearance now updates the page when no
+  theme has been chosen.
+
 ## [1.1.0] - 2026-09-20
 
 ### Added

@@ -4,10 +4,15 @@ Complete this checklist on the **actual Intel Mac** using a build from the curre
 
 | Scenario | Expected behavior | Result |
 | --- | --- | --- |
-| Fresh app launch | Window opens without errors; controls visible | Not tested |
-| Edit Config | Native editor opens with current INI | Not tested |
-| Cancel changes | Original config remains unchanged | Not tested |
-| Save changes | Config saved; backup exists; restart instruction visible | Not tested |
+| Fresh app launch | Window opens on Overview; "Finish setting up" card shown for a new config | Not tested |
+| Navigation | Sidebar and ⌘1–⌘5 switch between all five pages; nothing clipped | Not tested |
+| Light and Dark | Switching System Settings → Appearance restyles the open window | Not tested |
+| Radio port list | Plugged-in radio appears under Radio & Connection; Save Connection updates config | Not tested |
+| Edit Config | Configuration page shows current INI; copy/paste/undo work | Not tested |
+| Revert changes | Original config remains unchanged | Not tested |
+| Save changes | Config saved; backup exists; restart offered if bot is running | Not tested |
+| Restore backup | Confirmation shown; config and backup swap | Not tested |
+| Unsaved edits on close | Save / Don't Save / Cancel prompt appears | Not tested |
 | Invalid config | Empty/missing required sections rejected | Not tested |
 | Quit while stopped | App exits without Force Quit | Not tested |
 | Quit while running | App exits; bot subprocess stops | Not tested |

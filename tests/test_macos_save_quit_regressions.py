@@ -5,7 +5,7 @@ SOURCE = (Path(__file__).resolve().parents[1] / "macos/MeshCoreDesktop.swift").r
 
 
 def test_config_save_reports_errors():
-    editor = SOURCE.split("@objc private func editConfig()", 1)[1].split("@objc private func openFolder()", 1)[0]
+    editor = SOURCE.split("@objc private func saveConfig()", 1)[1].split("@objc private func openFolder()", 1)[0]
     assert "Could not save config.ini:" in editor
     assert "config.ini.bak.pending" in editor
     assert "updated.write(to: config, atomically: true" in editor
