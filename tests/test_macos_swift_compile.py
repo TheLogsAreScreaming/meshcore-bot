@@ -29,6 +29,9 @@ check(MeshCoreDesktop.iniValue("bot_name", section: "Bot", in: added) == "Test",
 let newSection = MeshCoreDesktop.settingIniValue("enabled", "true", section: "Extra", in: ini)
 check(MeshCoreDesktop.iniValue("enabled", section: "Extra", in: newSection) == "true", "creates missing section")
 check(MeshCoreDesktop.iniValue("enabled", section: "Web_Viewer", in: newSection) == "false", "keeps other values")
+let esc = "\u{1B}"
+check(MeshCoreDesktop.removingTerminalCodes(esc + "[32mhello" + esc + "[0m") == "hello", "strips color codes")
+check(MeshCoreDesktop.removingTerminalCodes(esc + "[1;31mERROR" + esc + "[0m [x]") == "ERROR [x]", "keeps plain brackets")
 print("ini helpers ok")
 '''
 

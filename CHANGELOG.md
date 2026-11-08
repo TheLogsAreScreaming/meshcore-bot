@@ -24,6 +24,9 @@ semantic versioning.
   path instead of a literal escape sequence; smart quotes can no longer corrupt
   config values; unsaved edits prompt before closing; a bot stuck in shutdown
   is force-stopped after 15 seconds.
+- Mac app: log views no longer show raw terminal color codes, and summary values
+  stay next to their labels.
+- Mac app: the window can be resized and fills the screen in full-screen mode.
 - Web dashboard: changing the system appearance now updates the page when no
   theme has been chosen.
 

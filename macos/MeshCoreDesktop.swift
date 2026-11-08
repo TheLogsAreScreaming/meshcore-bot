@@ -145,6 +145,7 @@ enum UI {
     static func label(_ value: String, font: NSFont = Theme.Typography.body,
                       color: NSColor = Theme.Palette.text) -> NSTextField {
         let field = NSTextField(labelWithString: value)
+        field.translatesAutoresizingMaskIntoConstraints = false
         field.font = font
         field.textColor = color
         field.lineBreakMode = .byTruncatingTail
@@ -155,9 +156,14 @@ enum UI {
     static func paragraph(_ value: String, font: NSFont = Theme.Typography.body,
                           color: NSColor = Theme.Palette.secondaryText) -> NSTextField {
         let field = WrappingLabel(wrappingLabelWithString: value)
+        // A frozen autoresizing width here would lock the width of the whole window.
+        field.translatesAutoresizingMaskIntoConstraints = false
         field.font = font
         field.textColor = color
         field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        // Wrapping labels hug their text by default; pinned edge to edge, that hug would
+        // dictate the window width and stop it resizing or filling the screen.
+        field.setContentHuggingPriority(.defaultLow, for: .horizontal)
         return field
     }
 
@@ -219,6 +225,7 @@ enum UI {
         stack.alignment = .leading
         stack.spacing = spacing
         stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.setHuggingPriority(.defaultLow, for: .horizontal)
         if fillWidth {
             // Grids keep their natural width so keys and values stay next to each other.
             for view in views where !(view is NSGridView) {
@@ -264,7 +271,10 @@ enum UI {
         grid.rowSpacing = Theme.Space.s
         grid.columnSpacing = Theme.Space.m
         grid.rowAlignment = .firstBaseline
+        // A fixed key column keeps values beside their keys however wide the card gets.
         grid.column(at: 0).xPlacement = .leading
+        grid.column(at: 0).width = 72
+        grid.column(at: 1).xPlacement = .leading
         grid.translatesAutoresizingMaskIntoConstraints = false
         return grid
     }
@@ -846,6 +856,7 @@ final class MeshCoreDesktop: NSObject, NSApplicationDelegate, NSWindowDelegate,
         summaries.distribution = .fillEqually
         summaries.alignment = .top
         summaries.spacing = Theme.Space.l
+        summaries.setHuggingPriority(.defaultLow, for: .horizontal)
         summaries.translatesAutoresizingMaskIntoConstraints = false
 
         recentActivity.isSelectable = true
@@ -1451,10 +1462,15 @@ final class MeshCoreDesktop: NSObject, NSApplicationDelegate, NSWindowDelegate,
 
     private static let logAttributes: [NSAttributedString.Key: Any] = [.font: Theme.Typography.mono]
 
+    /// Removes terminal color/control sequences; the bot emits them for console use.
+    static func removingTerminalCodes(_ text: String) -> String {
+        text.replacingOccurrences(of: "\u{1B}\\[[0-9;?]*[ -/]*[@-~]", with: "", options: .regularExpression)
+    }
+
     private func appendLog(_ s: String) {
         DispatchQueue.main.async {
             let styled = NSMutableAttributedString()
-            let lines = s.split(separator: "\n", omittingEmptySubsequences: false)
+            let lines = Self.removingTerminalCodes(s).split(separator: "\n", omittingEmptySubsequences: false)
             for (index, line) in lines.enumerated() {
                 var attributes = Self.logAttributes
                 if line.contains("ERROR") || line.contains("CRITICAL") || line.contains("Traceback") {
