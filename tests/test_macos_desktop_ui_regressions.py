@@ -67,3 +67,22 @@ def test_styling_comes_from_the_design_system():
 
 def test_page_transition_respects_reduce_motion():
     assert "accessibilityDisplayShouldReduceMotion" in SOURCE
+
+
+def test_log_strips_terminal_color_codes():
+    log = SOURCE.split("private func appendLog(", 1)[1].split("private func showError(", 1)[0]
+    assert "removingTerminalCodes(s)" in log
+
+
+def test_key_value_grid_keeps_values_beside_keys():
+    grid = SOURCE.split("static func keyValueGrid(", 1)[1].split("static func formGrid(", 1)[0]
+    assert "grid.column(at: 0).width" in grid
+    assert "grid.column(at: 1).xPlacement = .leading" in grid
+
+
+def test_labels_cannot_lock_the_window_width():
+    # A label left on autoresizing constraints froze the window at 916 pt in full screen.
+    for factory, end in (("static func label(", "static func paragraph("),
+                         ("static func paragraph(", "static func sectionLabel(")):
+        body = SOURCE.split(factory, 1)[1].split(end, 1)[0]
+        assert "translatesAutoresizingMaskIntoConstraints = false" in body
