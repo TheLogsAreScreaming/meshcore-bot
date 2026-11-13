@@ -2881,3 +2881,39 @@ class TestChannelPayloadCorrelation:
 
         assert result[RF_MATCH_KEY] == RF_MATCH_FALLBACK
         assert result["packet_prefix"] == "cc" * 16
+
+
+# ---------------------------------------------------------------------------
+# Mesh events (outbound webhooks)
+# ---------------------------------------------------------------------------
+
+class TestMessageReceivedEvent:
+    async def test_every_processed_message_is_emitted(self, handler):
+        from modules.mesh_events import get_event_bus
+
+        seen = []
+        get_event_bus(handler.bot).subscribe(lambda event, data: seen.append((event, data)))
+        handler.should_process_message = Mock(return_value=False)
+        msg = make_message(content="hello mesh", channel="general", sender_id="Al", snr=5.5)
+
+        await handler.process_message(msg)
+
+        assert len(seen) == 1
+        event, data = seen[0]
+        assert event == "message_received"
+        assert data["text"] == "hello mesh"
+        assert data["channel"] == "general"
+        assert data["sender"] == "Al"
+        assert data["snr"] == 5.5
+        assert data["is_dm"] is False
+
+    async def test_dm_has_no_channel(self, handler):
+        from modules.mesh_events import get_event_bus
+
+        seen = []
+        get_event_bus(handler.bot).subscribe(lambda event, data: seen.append(data))
+        handler.should_process_message = Mock(return_value=False)
+
+        await handler.process_message(make_message(content="psst", is_dm=True))
+
+        assert seen[0]["is_dm"] is True and seen[0]["channel"] is None

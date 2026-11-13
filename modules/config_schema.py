@@ -223,6 +223,16 @@ SECTIONS: dict[str, SectionMeta] = {
         "secret_token": KeyMeta(),
         "rate_limit_per_minute": KeyMeta(type="int", default="30"),
     }),
+    "Event_Webhooks": SectionMeta(keys={
+        "enabled": KeyMeta(type="bool"),
+        "urls": KeyMeta(),
+        "events": KeyMeta(default="message_received,command_run"),
+        "secret": KeyMeta(),
+        "include_dm_text": KeyMeta(type="bool", default="false"),
+        "channels": KeyMeta(),
+        "node_seen_interval_seconds": KeyMeta(type="int", default="300"),
+        "timeout_seconds": KeyMeta(type="int", default="5"),
+    }),
     "Feed_Manager": SectionMeta(keys={
         "feed_manager_enabled": KeyMeta(type="bool"),
         "allow_private_urls": KeyMeta(type="bool"),

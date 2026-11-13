@@ -798,6 +798,36 @@ class TestTrackContactAdvertisement:
         assert len(rows) == 1
         assert rows[0]['name'] == 'TestNode'
 
+    async def test_tracked_advert_emits_node_seen(self, rm):
+        """Outbound webhooks hear about each tracked advert, flagged new or repeat."""
+        from modules.mesh_events import get_event_bus
+
+        seen = []
+        get_event_bus(rm.bot).subscribe(lambda event, data: seen.append((event, data)))
+        rm.bot.meshcore = Mock()
+        rm.bot.meshcore.contacts = {}
+
+        await rm.track_contact_advertisement(self._make_advert())
+        await rm.track_contact_advertisement(self._make_advert())
+
+        assert [event for event, _ in seen] == ["node_seen", "node_seen"]
+        assert seen[0][1]["public_key"] == "aabb1122"
+        assert seen[0][1]["name"] == "TestNode"
+        assert [data["first_seen"] for _, data in seen] == [True, False]
+
+    async def test_duplicate_packet_does_not_emit_node_seen(self, rm):
+        from modules.mesh_events import get_event_bus
+
+        seen = []
+        get_event_bus(rm.bot).subscribe(lambda event, data: seen.append(event))
+        rm.bot.meshcore = Mock()
+        rm.bot.meshcore.contacts = {}
+
+        await rm.track_contact_advertisement(self._make_advert(), packet_hash="1234567890abcdef")
+        await rm.track_contact_advertisement(self._make_advert(), packet_hash="1234567890abcdef")
+
+        assert seen == ["node_seen"]
+
     async def test_existing_contact_updated_returns_true(self, rm):
         """Existing contact in DB is updated (advert_count incremented) → True."""
         advert = self._make_advert()

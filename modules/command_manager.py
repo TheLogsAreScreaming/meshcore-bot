@@ -35,6 +35,7 @@ from .flood_scope import (
     is_global_marker,
     normalize_scope_name,
 )
+from .mesh_events import emit_command_run
 from .models import (
     CHANNEL_REGIONAL_FLOOD_SCOPE_BODY_OVERHEAD,
     DM_BODY_LIMIT,
@@ -390,6 +391,8 @@ class CommandManager:
             stats_command = self.commands['stats']
             if stats_command:
                 stats_command.record_command(message, command.name, success)
+        emit_command_run(self.bot, message, command.name, bool(success),
+                         getattr(command, 'last_response', None))
 
     async def _apply_tx_delay(self):
         """Apply transmission delay to prevent message collisions"""
@@ -1041,6 +1044,7 @@ class CommandManager:
             stats_command = self.commands['stats']
             if stats_command:
                 stats_command.record_command(message, 'advert', response_sent)
+        emit_command_run(self.bot, message, 'advert', True, getattr(command, 'last_response', None))
 
     async def send_dm(
         self,
@@ -2119,6 +2123,7 @@ class CommandManager:
                         stats_command = self.commands['stats']
                         if stats_command:
                             stats_command.record_command(message, command_name, response_sent)
+                    emit_command_run(self.bot, message, command_name, bool(success), response)
 
                     # Capture command data for web viewer
                     if (hasattr(self.bot, 'web_viewer_integration') and
@@ -2182,6 +2187,7 @@ class CommandManager:
                         stats_command = self.commands['stats']
                         if stats_command:
                             stats_command.record_command(message, command_name, True)  # Error message counts as response
+                    emit_command_run(self.bot, message, command_name, False, error_msg)
 
                     # Capture failed command for web viewer
                     if (hasattr(self.bot, 'web_viewer_integration') and

@@ -329,3 +329,40 @@ class TestHandleWebhookDispatch:
         req = _make_request(body={"channel": "general", "message": "hi"})
         resp = await svc._handle_webhook(req)
         assert resp.status == 500
+
+
+# ---------------------------------------------------------------------------
+# Exposure guard
+# ---------------------------------------------------------------------------
+
+
+class TestExposureGuard:
+    """Anyone who can reach the listener can make the bot transmit."""
+
+    @pytest.mark.parametrize("host", ["127.0.0.1", "localhost", "::1", "[::1]", "127.0.0.2"])
+    def test_loopback_without_token_is_allowed(self, mock_logger, host):
+        svc, _ = _make_service(mock_logger, {"host": host})
+        assert svc.exposure_problem() is None
+
+    @pytest.mark.parametrize("host", ["0.0.0.0", "192.168.1.20", "::", "mybox.local"])
+    def test_reachable_address_without_token_is_refused(self, mock_logger, host):
+        svc, _ = _make_service(mock_logger, {"host": host})
+        problem = svc.exposure_problem()
+        assert problem is not None and "secret_token" in problem
+
+    def test_reachable_address_with_token_is_allowed(self, mock_logger):
+        svc, _ = _make_service(mock_logger, {"host": "0.0.0.0", "secret_token": "long-random"})
+        assert svc.exposure_problem() is None
+
+    @pytest.mark.asyncio
+    async def test_start_refuses_and_logs_instead_of_listening(self, mock_logger, monkeypatch):
+        import modules.service_plugins.webhook_service as ws
+
+        svc, _ = _make_service(mock_logger, {"host": "0.0.0.0"})
+        runner = Mock(side_effect=AssertionError("must not bind"))
+        monkeypatch.setattr(ws.aio_web, "AppRunner", runner)
+        await svc.start()
+        assert svc.enabled is False
+        assert svc._runner is None
+        mock_logger.error.assert_called_once()
+        assert "refusing to listen" in mock_logger.error.call_args.args[0]

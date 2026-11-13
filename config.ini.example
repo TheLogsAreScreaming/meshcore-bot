@@ -2433,11 +2433,18 @@ api_timeout = 10
 # Inbound webhook receiver — accept HTTP POST requests and relay them as MeshCore messages.
 # Useful for integrating external systems (alerts, monitoring, scripts) with the mesh.
 #
+# !! WARNING: this opens a door into your mesh. Anything that can reach this port
+# !! (and knows the token, if set) can make the bot transmit as itself. Keep it on
+# !! 127.0.0.1 unless you need it elsewhere. On any other address the bot refuses
+# !! to start the listener without secret_token, and you should firewall the port.
+# !! Never forward it from your router to the internet.
+#
 # Enable the webhook HTTP server (true/false). Default: false
 enabled = false
 
-# Bind address. Use 127.0.0.1 to accept connections only from localhost (recommended).
-# Use 0.0.0.0 to accept from any interface (ensure your firewall restricts access).
+# Bind address. Use 127.0.0.1 to accept connections only from this computer (recommended).
+# Use 0.0.0.0 to accept from any interface: secret_token is then required, and your
+# firewall should restrict who can reach the port.
 host = 127.0.0.1
 
 # Listen port (must not conflict with the web viewer port, default 8080).
@@ -2446,7 +2453,8 @@ port = 8765
 # Optional shared secret. If set, every request must include one of:
 #   Authorization: Bearer <secret_token>
 #   X-Webhook-Token: <secret_token>
-# Leave empty to disable authentication (NOT recommended for production).
+# Leave empty only when host = 127.0.0.1 (the listener will not start on any other
+# address without a token). Use a long random value, e.g. `openssl rand -hex 24`.
 # secret_token = changeme
 
 # Maximum message length in characters (excess is silently truncated). Default: 200
@@ -2476,6 +2484,51 @@ port = 8765
 #   {"dm_to": "SomeUser", "message": "Private message"}
 #
 # Response: {"ok": true}  or  {"error": "..."}
+# ---------------------------------------------------------------------------
+[Event_Webhooks]
+# Outbound event webhooks — POST selected mesh events as JSON to URLs you choose,
+# so home automation, dashboards or logging can react to what the bot hears.
+#
+# !! WARNING: every selected event leaves this computer. Channel messages include
+# !! their text, sender names and signal data, and webhook URLs often contain a
+# !! token. Only send to endpoints you control or trust, prefer https, and keep
+# !! include_dm_text = false unless you mean to forward private messages.
+#
+# Off by default.
+enabled = false
+
+# Comma-separated http(s) URLs. Every selected event is POSTed to each one.
+# urls = https://example.com/mesh-hook
+
+# Which events to send (comma-separated):
+#   message_received  a channel message or DM reached the bot
+#   node_seen         an advert from a node was heard (throttled per node, below)
+#   command_run       the bot ran a command for someone (includes its reply)
+events = message_received,command_run
+
+# Optional signing key. When set, each POST carries
+#   X-MeshCore-Signature: sha256=<hex HMAC-SHA256 of the raw body>
+# so the receiver can verify the request came from this bot.
+# secret =
+
+# false (default): DMs and DM commands are reported without their text or reply.
+include_dm_text = false
+
+# Only report channel messages from these channels (comma-separated). Empty = all.
+# channels = general,alerts
+
+# Report each node at most once per this many seconds (0 = every advert).
+node_seen_interval_seconds = 300
+
+# Per-request timeout in seconds (1-60). Failed sends get one retry, then are dropped.
+timeout_seconds = 5
+
+# Body of each POST:
+#   {"event": "command_run", "sent_at": "2026-11-13T18:00:00+00:00", "bot": "MyBot",
+#    "data": {"command": "wx", "ok": true, "channel": "general", "sender": "Al", ...}}
+# Header X-MeshCore-Event carries the event name.
+#
+# To go the other way (an HTTP POST that sends a mesh message) see [Webhook] above.
 # ---------------------------------------------------------------------------
 [RepeaterPrefixCollision_Service]
 # Enable repeater prefix collision notifications (true/false)

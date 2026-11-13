@@ -12,6 +12,7 @@ from typing import Any, NamedTuple, Optional
 
 from meshcore import EventType
 
+from .mesh_events import EVENT_NODE_SEEN, emit
 from .security_utils import sanitize_name, validate_pubkey_format
 from .utils import rate_limited_nominatim_reverse_sync
 
@@ -364,6 +365,18 @@ class RepeaterManager:
 
                 conn.commit()
 
+            emit(self.bot, EVENT_NODE_SEEN, lambda: {
+                "public_key": public_key,
+                "name": name,
+                "role": role,
+                "device_type": device_type_str,
+                "first_seen": not existing,
+                "hops": hop_count,
+                "snr": snr,
+                "rssi": signal_strength,
+                "latitude": location_info.get('latitude'),
+                "longitude": location_info.get('longitude'),
+            })
             return TrackAdvertResult(ok=True, duplicate_packet=False)
 
         except Exception as e:

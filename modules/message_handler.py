@@ -15,6 +15,7 @@ from typing import Any, TypedDict
 
 from .enums import AdvertFlags, DeviceRole, PayloadType, PayloadVersion, RouteType
 from .graph_trace_helper import update_mesh_graph_from_trace_data
+from .mesh_events import EVENT_MESSAGE_RECEIVED, emit, emit_command_run, message_payload
 from .meshcore_payload_decode import channel_hash_for_key, decrypt_group_text
 from .models import MeshMessage
 from .neighbors_discovery import upsert_zero_hop_observed_path_via_manager
@@ -3821,6 +3822,9 @@ class MessageHandler:
 
     async def process_message(self, message: MeshMessage) -> None:
         """Process a received message"""
+        # Observers (e.g. outbound webhooks) see every message that reaches the bot.
+        emit(self.bot, EVENT_MESSAGE_RECEIVED, lambda: message_payload(message))
+
         # Check if multitest is listening and notify it
         if self.multitest_listener:
             try:
@@ -3934,6 +3938,7 @@ class MessageHandler:
                     if stats_command:
                         # response is not None here, so we know a response will be sent
                         stats_command.record_command(message, keyword, True)
+                emit_command_run(self.bot, message, keyword, True, response)
 
                 # Generate command_id for repeat tracking (before sending)
                 import time
