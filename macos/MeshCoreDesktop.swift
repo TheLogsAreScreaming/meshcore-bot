@@ -582,6 +582,7 @@ final class MeshCoreDesktop: NSObject, NSApplicationDelegate, NSWindowDelegate,
             item("Restart Bot", #selector(restartBot), "r", [.command, .shift]),
             .separator(),
             item("Open Dashboard", #selector(openDashboard), "d"),
+            item("Test Nearby Repeaters", #selector(testNearbyRepeaters)),
             item("Save Configuration", #selector(saveConfig), "s"),
             .separator(),
             item("Open Bot Folder", #selector(openFolder)),
@@ -609,7 +610,7 @@ final class MeshCoreDesktop: NSObject, NSApplicationDelegate, NSWindowDelegate,
         case #selector(startBot): return process == nil
         case #selector(stopBot): return process?.isRunning == true && state != .stopping
         case #selector(restartBot): return process?.isRunning == true && state != .stopping
-        case #selector(openDashboard): return process?.isRunning == true
+        case #selector(openDashboard), #selector(testNearbyRepeaters): return process?.isRunning == true
         case #selector(saveConfig): return configIsDirty
         case #selector(selectSection(_:)):
             menuItem.state = menuItem.tag == currentSection.rawValue ? .on : .off
@@ -1730,6 +1731,16 @@ final class MeshCoreDesktop: NSObject, NSApplicationDelegate, NSWindowDelegate,
     }
 
     @objc private func openDashboard() {
+        openDashboardPage()
+    }
+
+    /// Opens the dashboard's Radio page, which starts the nearby repeater test
+    /// (one zero-hop discover; lists repeaters that answered with their SNR).
+    @objc private func testNearbyRepeaters() {
+        openDashboardPage(path: "/radio", fragment: "nearby-test")
+    }
+
+    private func openDashboardPage(path: String = "", fragment: String? = nil) {
         guard let p = process, p.isRunning else {
             showError("Start the bot first", detail: "The dashboard runs while the bot is running. If the radio can't connect, the bot and dashboard stop — check the Activity Log.")
             return
@@ -1766,6 +1777,8 @@ final class MeshCoreDesktop: NSObject, NSApplicationDelegate, NSWindowDelegate,
         components.scheme = "http"
         components.host = host
         components.port = port
+        components.path = path
+        components.fragment = fragment
         guard let url = components.url else {
             showError("Invalid dashboard address", detail: "Check the [Web_Viewer] settings.")
             return

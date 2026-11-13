@@ -2050,6 +2050,22 @@ class TestApiRadioAdvert:
             assert response.status_code == 400
 
 
+class TestApiNearbyRepeaters:
+    def test_nearby_test_queues_operation(self, viewer_with_db):
+        with viewer_with_db.app.test_client() as client:
+            response = client.post('/api/radio/nearby-repeaters', json={})
+            assert response.status_code == 200
+            data = json.loads(response.data)
+            row = _queued_operation(viewer_with_db, data['operation_id'])
+            assert row['operation_type'] == 'radio_nearby_probe'
+
+    def test_radio_page_has_the_nearby_test_button(self, viewer_with_db):
+        with viewer_with_db.app.test_client() as client:
+            html = client.get('/radio').get_data(as_text=True)
+            assert 'id="nearbyTestBtn"' in html
+            assert 'id="nearby-test"' in html
+
+
 class TestApiFirmwareConfig:
     def test_write_rejects_loop_detect(self, viewer_with_db):
         """loop.detect is repeater/room-server CLI config, not a companion setting."""

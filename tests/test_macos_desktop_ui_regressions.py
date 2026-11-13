@@ -99,3 +99,18 @@ def test_radio_connect_failure_gets_its_own_status():
     assert "!requested && couldNotConnect" in handler
     assert "self.state = .couldNotConnect" in handler
     assert 'title: "Couldn\'t connect to the radio"' in SOURCE
+
+
+def test_bot_menu_opens_the_nearby_repeater_test():
+    # The Mac menu item must land on the dashboard section that starts the test.
+    assert 'item("Test Nearby Repeaters", #selector(testNearbyRepeaters))' in SOURCE
+    action = SOURCE.split("@objc private func testNearbyRepeaters()", 1)[1].split("}", 1)[0]
+    assert 'path: "/radio"' in action and 'fragment: "nearby-test"' in action
+    radio = (Path(__file__).resolve().parents[1] / "modules/web_viewer/templates/radio.html").read_text()
+    assert 'id="nearby-test"' in radio
+    assert "window.location.hash === '#nearby-test'" in radio
+    # Only offered while the bot (and so the dashboard) is running.
+    assert "#selector(testNearbyRepeaters): return process?.isRunning == true" in SOURCE
+    # The dashboard address stays on loopback whichever page is opened.
+    page = SOURCE.split("private func openDashboardPage(", 1)[1].split("// MARK: INI helpers", 1)[0]
+    assert 'let host = "127.0.0.1"' in page

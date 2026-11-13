@@ -5257,6 +5257,24 @@ class BotDataViewer:
                 self.logger.error(f"Error queuing radio advert: {e}")
                 return jsonify({'error': str(e)}), 500
 
+        @self.app.route('/api/radio/nearby-repeaters', methods=['POST'])
+        def api_radio_nearby_repeaters():
+            """Queue a nearby repeater test (zero-hop discover, then list who
+            answered with SNR). Poll /api/channel-operations/<id>; the result's
+            result_data holds {repeaters: [{name, prefix, pubkey, snr}], listened}."""
+            try:
+                with self.db_manager.connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        "INSERT INTO channel_operations (operation_type, status) VALUES ('radio_nearby_probe', 'pending')"
+                    )
+                    conn.commit()
+                    op_id = cursor.lastrowid
+                return jsonify({'success': True, 'operation_id': op_id})
+            except Exception as e:
+                self.logger.error(f"Error queuing nearby repeater test: {e}")
+                return jsonify({'error': str(e)}), 500
+
     def _setup_socketio_handlers(self):
         """Setup SocketIO event handlers using modern patterns"""
 

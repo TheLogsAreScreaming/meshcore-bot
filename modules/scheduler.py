@@ -47,6 +47,7 @@ _RADIO_OPERATION_TYPES = (
     'radio_params_read',
     'radio_params_write',
     'radio_advert',
+    'radio_nearby_probe',
 )
 _CONFIG_OPERATION_TYPES = ('config_reload',)
 
@@ -1429,6 +1430,8 @@ class MessageScheduler:
                 elif op_type == 'radio_advert':
                     payload = json.loads(op['payload_data'] or '{}')
                     success, result_payload = await self._radio_advert_op(payload)
+                elif op_type == 'radio_nearby_probe':
+                    success, result_payload = await self._radio_nearby_probe_op()
                 else:
                     success = False
 
@@ -1790,6 +1793,12 @@ class MessageScheduler:
         except Exception as e:
             self.logger.error(f"Radio advert failed: {e}")
             return False, {'error': str(e)}
+
+    async def _radio_nearby_probe_op(self):
+        """Run the nearby repeater test (see modules/nearby_repeaters.py)."""
+        from .nearby_repeaters import get_probe
+        result = await get_probe(self.bot).run()
+        return bool(result.get('ok')), result
 
     # ── Maintenance (delegates to MaintenanceRunner) ─────────────────────────
 
