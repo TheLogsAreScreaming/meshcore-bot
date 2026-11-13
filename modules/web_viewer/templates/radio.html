@@ -263,6 +263,31 @@
 
                     <hr class="my-4">
 
+                    <!-- Nearby repeater test -->
+                    <h6 class="text-uppercase text-muted fw-semibold mb-3" id="nearby-test" style="font-size:.75rem;letter-spacing:.05em;">
+                        Nearby Repeater Test
+                    </h6>
+                    <p class="text-muted small mb-2">
+                        Asks every repeater in direct radio range to answer, then lists them by signal (SNR).
+                        Each test makes those repeaters transmit, so tests are limited to one every couple of minutes.
+                        The same test runs from the <code>nearby</code> bot command.
+                    </p>
+                    <button type="button" class="btn btn-outline-primary" id="nearbyTestBtn">
+                        <span class="spinner-border spinner-border-sm me-1" id="nearbyTestSpinner" style="display:none" role="status"></span>
+                        <i class="fas fa-satellite-dish me-1"></i>Test Nearby Repeaters
+                    </button>
+                    <div id="nearbyTestStatus" class="small mt-2" role="status" aria-live="polite"></div>
+                    <div class="table-responsive mt-2">
+                        <table class="table table-sm align-middle mb-0" id="nearbyTestTable" style="display:none">
+                            <thead>
+                                <tr><th scope="col">Repeater</th><th scope="col">Prefix</th><th scope="col">SNR</th></tr>
+                            </thead>
+                            <tbody id="nearbyTestRows"></tbody>
+                        </table>
+                    </div>
+
+                    <hr class="my-4">
+
                     <!-- Mesh Behavior -->
                     <h6 class="text-uppercase text-muted fw-semibold mb-3" style="font-size:.75rem;letter-spacing:.05em;">
                         Mesh Behavior
@@ -1434,6 +1459,11 @@ class RadioManager {
         document.getElementById('applyTuningBtn').addEventListener('click', () => this.applyTuning());
         document.getElementById('sendAdvertZeroBtn').addEventListener('click', () => this.sendAdvert(false));
         document.getElementById('sendAdvertFloodBtn').addEventListener('click', () => this.sendAdvert(true));
+        document.getElementById('nearbyTestBtn').addEventListener('click', () => this.runNearbyTest());
+        if (window.location.hash === '#nearby-test') {
+            document.getElementById('nearby-test').scrollIntoView();
+            this.runNearbyTest();
+        }
     }
 
     setNodeAlert(type, message) {
@@ -1691,6 +1721,58 @@ class RadioManager {
         });
     }
 
+
+    // Nearby repeater test: one zero-hop discover, list who answered by SNR.
+    async runNearbyTest() {
+        const btn = document.getElementById('nearbyTestBtn');
+        const spinner = document.getElementById('nearbyTestSpinner');
+        const status = document.getElementById('nearbyTestStatus');
+        const table = document.getElementById('nearbyTestTable');
+        const rows = document.getElementById('nearbyTestRows');
+        btn.disabled = true;
+        spinner.style.display = 'inline-block';
+        status.className = 'small mt-2 text-muted';
+        status.textContent = 'Listening for repeaters…';
+        try {
+            const resp = await fetch('/api/radio/nearby-repeaters', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: '{}'
+            });
+            const queued = await resp.json();
+            if (!resp.ok || !queued.operation_id) {
+                throw new Error(queued.error || 'Failed to queue the test');
+            }
+            // Listen window is at most 60s, plus the request and queue pickup.
+            const result = await this.pollRadioParamsOp(queued.operation_id, 100);
+            if (!result || result.status !== 'completed') {
+                const data = result && result.result_data;
+                throw new Error((data && data.error) || result?.error_message || 'Test failed');
+            }
+            const repeaters = (result.result_data && result.result_data.repeaters) || [];
+            rows.replaceChildren();
+            for (const rep of repeaters) {
+                const tr = document.createElement('tr');
+                for (const text of [rep.name, rep.prefix, `${rep.snr >= 0 ? '+' : ''}${Number(rep.snr).toFixed(1)} dB`]) {
+                    const td = document.createElement('td');
+                    td.textContent = text;
+                    tr.appendChild(td);
+                }
+                rows.appendChild(tr);
+            }
+            table.style.display = repeaters.length ? '' : 'none';
+            status.className = 'small mt-2 ' + (repeaters.length ? 'text-success' : 'text-warning');
+            status.textContent = repeaters.length
+                ? `${repeaters.length} repeater(s) answered.`
+                : 'No repeaters answered. Nothing is in direct range right now.';
+        } catch (e) {
+            status.className = 'small mt-2 text-danger';
+            status.textContent = e.message;
+        } finally {
+            btn.disabled = false;
+            spinner.style.display = 'none';
+        }
+    }
 
     // ── Region scopes ([Channels] flood_scopes) ─────────────────────────────
 

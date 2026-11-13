@@ -371,3 +371,41 @@ def test_other_host_processing_owner_stays_blocked_conservatively(tmp_path):
     reboot_radio.assert_not_awaited()
     assert _operation(manager, active_id)["status"] == "processing"
     assert _operation(manager, pending_id)["status"] == "pending"
+
+
+def test_nearby_probe_operation_stores_the_repeater_list(tmp_path):
+    import json
+
+    from modules import nearby_repeaters
+
+    manager = _initialize_database(tmp_path)
+    op_id = _insert_operation(manager, "radio_nearby_probe")
+    scheduler = _make_scheduler(manager)
+    listing = {"ok": True, "reason": None, "count": 1, "listened": 15.0,
+               "repeaters": [{"pubkey": "a1" * 32, "prefix": "a1", "name": "Hilltop", "snr": 4.5}]}
+    fake_probe = SimpleNamespace(run=AsyncMock(return_value=listing))
+
+    with patch.object(nearby_repeaters, "get_probe", return_value=fake_probe):
+        asyncio.run(scheduler._process_radio_operations())
+
+    row = _operation(manager, op_id)
+    assert row["status"] == "completed"
+    assert json.loads(row["result_data"])["repeaters"][0]["name"] == "Hilltop"
+
+
+def test_refused_nearby_probe_operation_fails_with_its_reason(tmp_path):
+    from modules import nearby_repeaters
+
+    manager = _initialize_database(tmp_path)
+    op_id = _insert_operation(manager, "radio_nearby_probe")
+    scheduler = _make_scheduler(manager)
+    refused = {"ok": False, "reason": "cooldown", "repeaters": [], "count": 0,
+               "error": "A repeater test ran recently; try again in 90s"}
+    fake_probe = SimpleNamespace(run=AsyncMock(return_value=refused))
+
+    with patch.object(nearby_repeaters, "get_probe", return_value=fake_probe):
+        asyncio.run(scheduler._process_radio_operations())
+
+    row = _operation(manager, op_id)
+    assert row["status"] == "failed"
+    assert "try again in 90s" in row["error_message"]

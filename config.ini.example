@@ -1662,6 +1662,20 @@ enabled = true
 # Worth adding to Admin_ACL admin_commands, since a cycle spends airtime.
 enabled = true
 # channels =
+[Nearby_Command]
+# Nearby repeater test: one zero-hop discover request, then lists every repeater
+# that answered, strongest signal first ("RptA a1 +9.5dB, ..."). Works in DMs and
+# channels (`nearby` or `rptest`), from the dashboard's Radio page, and from the
+# Mac app's Bot menu. Each test makes every repeater in range transmit a reply,
+# so tests are rationed node-wide. Worth adding to Admin_ACL admin_commands on a
+# busy mesh.
+enabled = true
+# Seconds to listen for answers (5-60). Repeaters reply after a random delay,
+# so a shorter window finds fewer of them.
+listen_seconds = 15
+# Minimum seconds between tests, whichever trigger asks (floor: 30).
+min_gap_seconds = 120
+# channels =
 [Test_Command]
 enabled = true
 # Require minimum path byte length before responding to test/t

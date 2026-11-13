@@ -169,6 +169,10 @@
       "neighbors",
       "neighbours"
     ],
+    "nearby": [
+      "nearby",
+      "rptest"
+    ],
     "multitest": [
       "multitest",
       "mt"
@@ -1351,6 +1355,16 @@
     "contact": {
       "help": "Display the bot's contact information",
       "unavailable": "Contact info unavailable: the radio has not reported its identity yet."
+    },
+    "nearby": {
+      "description": "Tests which repeaters can hear this node directly and lists them by signal",
+      "started": "Testing nearby repeaters - listening for about {seconds}s...",
+      "none": "No repeaters answered in {seconds}s. Nothing is in direct range right now.",
+      "header": "Nearby repeaters",
+      "busy": "A repeater test is already running. Try again once it finishes.",
+      "cooldown": "A repeater test ran recently. Try again in about {seconds}s - each test costs airtime for the whole mesh.",
+      "not_connected": "The radio is not connected, so the repeater test cannot run.",
+      "failed": "Repeater test did not run: {reason}."
     }
   },
   "elapsed": {

@@ -769,6 +769,24 @@ With no path, both use the path your message took to reach the bot (like the tes
 
 ---
 
+### `nearby` or `rptest`
+
+Nearby repeater test. The bot's radio sends one zero-hop discover request, listens for about 15 seconds, then lists every repeater that answered, strongest signal first.
+
+**Example reply:**
+```
+Nearby repeaters (3): Hilltop a1 +9.5dB, Valley 4f +2.0dB, Ridge 07 -6.3dB
+```
+Each entry is the repeater's name (or key prefix if the bot has never heard its advert), its 1-byte path prefix, and the SNR the bot's radio heard its answer at. Works in DMs and channels. If more repeaters answer than fit in one message, the reply ends with `+N more`; the dashboard shows the full list.
+
+The same test runs from the web dashboard (**Radio → Nearby Repeater Test**) and from the Mac app (**Bot → Test Nearby Repeaters**).
+
+**Airtime:** every repeater in range transmits a reply, so tests are limited node-wide (one at a time, and `min_gap_seconds` apart whichever trigger asks). It also will not overlap a scheduled `[PacketCapture]` neighbour cycle.
+
+**Config:** `[Nearby_Command]` — `enabled`, `listen_seconds` (5-60, default 15), `min_gap_seconds` (floor 30, default 120), `channels`.
+
+---
+
 ### `prefix <XX>`
 
 Look up repeaters by two-character prefix.
