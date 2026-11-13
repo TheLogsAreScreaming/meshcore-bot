@@ -1386,7 +1386,7 @@ final class MeshCoreDesktop: NSObject, NSApplicationDelegate, NSWindowDelegate,
         case .couldNotConnect:
             return StatusStyle(symbol: "exclamationmark.triangle.fill", color: Theme.Palette.danger,
                                title: "Couldn't connect to the radio",
-                               detail: "Check it's on, nearby and not connected to another device, then press Start Bot.")
+                               detail: "Check it's on, in range and not in use by another app or phone.")
         }
     }
 
