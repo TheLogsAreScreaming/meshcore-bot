@@ -333,11 +333,12 @@ enum BotState: Equatable {
     case running(pid: Int32, since: Date)
     case stopping
     case exitedUnexpectedly(code: Int32)
+    case couldNotConnect
 
     var isActive: Bool {
         switch self {
         case .running, .stopping: return true
-        case .stopped, .exitedUnexpectedly: return false
+        case .stopped, .exitedUnexpectedly, .couldNotConnect: return false
         }
     }
 }
@@ -366,6 +367,9 @@ final class MeshCoreDesktop: NSObject, NSApplicationDelegate, NSWindowDelegate,
     private var process: Process?
     private var logPipe: Pipe?
     private var stopRequested = false
+    /// Set when the bot logs that it gave up reaching the radio. The bot then
+    /// exits with code 0, so the exit code alone can't tell this apart from Stop.
+    private var connectFailureSeen = false
     private var restartAfterStop = false
     private var closeConfirmed = false
     private var uptimeTimer: Timer?
@@ -1379,6 +1383,10 @@ final class MeshCoreDesktop: NSObject, NSApplicationDelegate, NSWindowDelegate,
         case let .exitedUnexpectedly(code):
             return StatusStyle(symbol: "exclamationmark.triangle.fill", color: Theme.Palette.danger, title: "Stopped unexpectedly",
                                detail: "Exit code \(code). Check the Activity Log — often the radio couldn't be reached.")
+        case .couldNotConnect:
+            return StatusStyle(symbol: "exclamationmark.triangle.fill", color: Theme.Palette.danger,
+                               title: "Couldn't connect to the radio",
+                               detail: "Check it's on, nearby and not connected to another device, then press Start Bot.")
         }
     }
 
@@ -1467,6 +1475,8 @@ final class MeshCoreDesktop: NSObject, NSApplicationDelegate, NSWindowDelegate,
         text.replacingOccurrences(of: "\u{1B}\\[[0-9;?]*[ -/]*[@-~]", with: "", options: .regularExpression)
     }
 
+    static let connectFailureMarker = "Failed to connect to MeshCore node"
+
     private func appendLog(_ s: String) {
         DispatchQueue.main.async {
             let styled = NSMutableAttributedString()
@@ -1482,6 +1492,7 @@ final class MeshCoreDesktop: NSObject, NSApplicationDelegate, NSWindowDelegate,
                 }
                 let piece = index < lines.count - 1 ? line + "\n" : line
                 styled.append(NSAttributedString(string: String(piece), attributes: attributes))
+                if line.contains(Self.connectFailureMarker) { self.connectFailureSeen = true }
                 let trimmed = line.trimmingCharacters(in: .whitespaces)
                 if !trimmed.isEmpty { self.recentLines.append(trimmed) }
             }
@@ -1597,7 +1608,12 @@ final class MeshCoreDesktop: NSObject, NSApplicationDelegate, NSWindowDelegate,
                 self.process = nil
                 let requested = self.stopRequested
                 self.stopRequested = false
-                if requested || terminated.terminationStatus == 0 {
+                let couldNotConnect = self.connectFailureSeen
+                self.connectFailureSeen = false
+                if !requested && couldNotConnect {
+                    self.state = .couldNotConnect
+                    self.appendLog("--- MeshCore Bot stopped: it couldn't connect to the radio ---\n")
+                } else if requested || terminated.terminationStatus == 0 {
                     self.state = .stopped
                     self.appendLog("--- MeshCore Bot stopped ---\n")
                 } else {
@@ -1614,6 +1630,7 @@ final class MeshCoreDesktop: NSObject, NSApplicationDelegate, NSWindowDelegate,
             try p.run()
             process = p
             stopRequested = false
+            connectFailureSeen = false
             state = .running(pid: p.processIdentifier, since: Date())
             appendLog("\n--- Starting MeshCore Bot ---\n")
         } catch {
