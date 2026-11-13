@@ -18,17 +18,17 @@ This fork includes a **click-to-open native macOS control center** for Intel Mac
 
 **Configuration:** Choose how the bot reaches your radio on **Radio & Connection**, or edit every setting on **Configuration** (⌘S saves, a backup is kept). Restart the bot to apply changes. The app stores its local configuration under `~/Library/Application Support/MeshCore Bot/`. **Open Dashboard** opens the local web viewer while the bot is running.
 
-**Security and testing:** The macOS build is ad-hoc signed, **not notarized**. If macOS blocks it, use System Settings → Privacy & Security → Open Anyway only after verifying the build source. Automated packaging and regression checks pass on CI, but actual radio communication and the previously reported editor/quit issues still require confirmation on an Intel Mac. **No stable release is claimed.**
+**Security and testing:** The macOS build is ad-hoc signed, **not notarized**. If macOS blocks it, use System Settings → Privacy & Security → Open Anyway only after verifying the build source. Automated packaging and regression checks pass on CI. On a real Intel Mac, a Bluetooth radio connection, saving, Revert, Restore Backup, the unsaved-changes prompts, keyboard shortcuts, full screen and light/dark mode have been checked; USB and network (TCP) radios and quitting while the bot is running are still untested. **No stable release is claimed.**
 
 ### Screenshots
 
-Real screenshots will be added after a successful Intel Mac smoke test. The project intentionally does not display generated mockups as verified application screenshots.
+Captured from the installed Intel Mac app (bot stopped; no radio data shown).
 
-| Screen | What it shows |
-| --- | --- |
-| Desktop overview | Connection status, controls, and live activity |
-| Built-in config editor | Editing and saving `config.ini` |
-| Local web dashboard | Browser-based monitoring and mesh activity |
+![Overview page: bot status, radio, web dashboard and latest activity](docs/screenshots/mac-overview.png)
+
+![Radio & Connection page: connection method, radio name and web dashboard settings](docs/screenshots/mac-radio-connection.png)
+
+![Configuration page: the built-in config.ini editor with Restore Backup, Revert and Save](docs/screenshots/mac-config-editor.png)
 
 Maintainers: see [screenshot capture guide](docs/mac-screenshots.md) for how to capture and publish these images. Please hide radio identifiers, personal messages, credentials, and location data before committing screenshots.
 

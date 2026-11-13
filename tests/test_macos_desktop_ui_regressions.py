@@ -86,3 +86,16 @@ def test_labels_cannot_lock_the_window_width():
                          ("static func paragraph(", "static func sectionLabel(")):
         body = SOURCE.split(factory, 1)[1].split(end, 1)[0]
         assert "translatesAutoresizingMaskIntoConstraints = false" in body
+
+
+def test_radio_connect_failure_gets_its_own_status():
+    # The bot exits with code 0 when it can't reach the radio, which used to
+    # leave Overview saying a plain "Stopped" with the error scrolled away.
+    marker = 'connectFailureMarker = "Failed to connect to MeshCore node"'
+    assert marker in SOURCE
+    core = (Path(__file__).resolve().parents[1] / "modules/core.py").read_text()
+    assert 'self.logger.error("Failed to connect to MeshCore node")' in core
+    handler = SOURCE.split("p.terminationHandler = {", 1)[1].split("do {", 1)[0]
+    assert "!requested && couldNotConnect" in handler
+    assert "self.state = .couldNotConnect" in handler
+    assert 'title: "Couldn\'t connect to the radio"' in SOURCE

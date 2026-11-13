@@ -19,6 +19,10 @@ semantic versioning.
 
 ### Fixed
 
+- Intel Mac app: when the bot can't reach the radio, Overview now says
+  "Couldn't connect to the radio" with what to check, instead of a plain
+  "Stopped" (the bot exits normally in that case, so the exit code alone
+  didn't show it).
 - Mac app: copy, paste and undo now work in the config editor (no Edit menu
   before); sidebar items are clickable; the startup log shows the data folder
   path instead of a literal escape sequence; smart quotes can no longer corrupt
