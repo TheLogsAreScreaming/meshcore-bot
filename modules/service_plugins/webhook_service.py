@@ -44,6 +44,7 @@ Response codes:
          few seconds.
 """
 
+import ipaddress
 import secrets
 import time
 from collections import OrderedDict
@@ -59,6 +60,17 @@ except ImportError:
     AIOHTTP_AVAILABLE = False
 
 
+def _is_loopback_host(host: str) -> bool:
+    """True for addresses only this computer can reach."""
+    host = (host or "").strip().strip("[]").lower()
+    if host == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
 class WebhookService(BaseServicePlugin):
     """Accept inbound HTTP POST webhooks and relay them as MeshCore messages."""
 
@@ -68,12 +80,13 @@ class WebhookService(BaseServicePlugin):
     # Web-viewer settings schema (see modules/settings_schema.py)
     settings_schema = [
         {"key": "host", "label": "Bind host", "type": "str", "default": "127.0.0.1",
-         "help": "127.0.0.1 = localhost only (recommended); 0.0.0.0 = any interface."},
+         "help": "127.0.0.1 = localhost only (recommended). Any other address lets other devices "
+                 "make the bot transmit, and requires a secret token."},
         {"key": "port", "label": "Listen port", "type": "int", "min": 1, "max": 65535, "default": 8765,
          "help": "Must not conflict with the web viewer port."},
         {"key": "secret_token", "label": "Secret token", "type": "str", "default": "",
          "help": "If set, requests must include it via 'Authorization: Bearer' or 'X-Webhook-Token'. "
-                 "Empty disables auth (not recommended)."},
+                 "Required unless the bind host is 127.0.0.1."},
         {"key": "max_message_length", "label": "Max message length", "type": "int", "min": 1, "default": 200,
          "help": "Excess is silently truncated."},
         {"key": "allowed_channels", "label": "Allowed channels", "type": "list", "default": "",
@@ -131,10 +144,38 @@ class WebhookService(BaseServicePlugin):
     # Lifecycle
     # ------------------------------------------------------------------
 
+    def exposure_problem(self) -> Optional[str]:
+        """Why starting the listener would be unsafe, or None.
+
+        Anyone who can reach this port can make the bot transmit on the mesh.
+        Bound to loopback that is only programs on this computer; bound to any
+        other address it is every device that can reach it, so a secret token
+        is required there.
+        """
+        if not self.secret_token and not _is_loopback_host(self.host):
+            return (
+                f"refusing to listen on {self.host}:{self.port} without a secret_token: "
+                "anyone who can reach that address could make the bot transmit on the mesh. "
+                "Set [Webhook] secret_token, or bind host = 127.0.0.1"
+            )
+        return None
+
     async def start(self) -> None:
         if not self.enabled:
             self.logger.info("Webhook service is disabled")
             return
+
+        problem = self.exposure_problem()
+        if problem:
+            self.logger.error(f"Webhook service: {problem}")
+            self.enabled = False
+            return
+        if not _is_loopback_host(self.host):
+            self.logger.warning(
+                f"Webhook service: listening on {self.host}:{self.port}, reachable from other "
+                "devices. Anyone with the secret token can send messages on the mesh as this bot; "
+                "keep the token private and restrict the port with a firewall."
+            )
 
         app = aio_web.Application(client_max_size=self.MAX_BODY_SIZE)
         app.router.add_post("/webhook", self._handle_webhook)

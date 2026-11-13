@@ -10,7 +10,8 @@ Service plugins extend the bot with background services that run alongside the m
 | [Map Uploader](map-uploader.md) | Upload node advertisements to [map.meshcore.dev](https://map.meshcore.dev) for network visualization |
 | [Weather Service](weather-service.md) | Scheduled weather forecasts, weather alerts, and lightning detection |
 | MQTT Weather Relay (`MqttWeather`) | Relay weather data to custom MQTT topics configured under `[Weather]` |
-| Webhook Service (`Webhook`) | Accept inbound HTTP POST payloads and relay to mesh channels or DMs |
+| Webhook Service (`Webhook`) | Accept inbound HTTP POST payloads and relay to mesh channels or DMs (see [Webhooks](webhooks.md)) |
+| Event Webhooks (`Event_Webhooks`) | POST mesh events (messages received, nodes seen, commands run) to your URLs (see [Webhooks](webhooks.md)) |
 | [Earthquake Service](earthquake-service.md) | Earthquake alerts for a configured region (USGS API, defaults: California) |
 | [Repeater Prefix Collision Service](repeater-prefix-collision-service.md) | Alerts when a newly heard repeater prefix collides with an existing repeater prefix |
 | [World Cup Live Service](worldcup.md) | Proactive FIFA World Cup match announcements (auto-detects the active tournament) |

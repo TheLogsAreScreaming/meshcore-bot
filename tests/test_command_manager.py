@@ -1209,3 +1209,72 @@ class TestExecuteCommandsErrorPath:
         sent = manager.send_response.await_args.args[1]
         assert sent == "errors.execution_error: kaboom"
         assert ".py" not in sent and "command_manager" not in sent
+
+
+class TestCommandRunEvent:
+    """command_run reaches mesh event listeners (outbound webhooks)."""
+
+    @staticmethod
+    def _command(execute):
+        command = TestExecuteCommandsErrorPath._failing_command(RuntimeError("unused"))
+        command.execute = execute
+        return command
+
+    @staticmethod
+    def _listen(bot):
+        from modules.mesh_events import MeshEventBus
+
+        seen = []
+        bot.mesh_events = MeshEventBus()
+        bot.mesh_events.subscribe(lambda event, data: seen.append((event, data)))
+        return seen
+
+    @pytest.mark.asyncio
+    async def test_successful_command_is_emitted(self, cm_bot):
+        seen = self._listen(cm_bot)
+        command = self._command(AsyncMock(return_value=True))
+        command.last_response = "Sunny, 18C"
+        manager = make_manager(cm_bot, commands={"wx": command})
+        manager.send_response = AsyncMock(return_value=True)
+
+        await manager.execute_commands(mock_message(content="!wx", channel="general", sender_id="Al"))
+
+        events = [data for event, data in seen if event == "command_run"]
+        assert len(events) == 1
+        assert events[0]["command"] == "wx"
+        assert events[0]["ok"] is True
+        assert events[0]["sender"] == "Al"
+        assert events[0]["channel"] == "general"
+        assert events[0]["response"] == "Sunny, 18C"
+
+    @pytest.mark.asyncio
+    async def test_failed_command_is_emitted_not_ok(self, cm_bot):
+        seen = self._listen(cm_bot)
+        manager = make_manager(
+            cm_bot, commands={"boom": TestExecuteCommandsErrorPath._failing_command(RuntimeError("kaboom"))}
+        )
+        manager.send_response = AsyncMock(return_value=True)
+
+        await manager.execute_commands(mock_message(content="!boom", is_dm=True))
+
+        assert [(e, d["ok"]) for e, d in seen if e == "command_run"] == [("command_run", False)]
+
+    @pytest.mark.asyncio
+    async def test_queued_command_is_emitted(self, cm_bot):
+        seen = self._listen(cm_bot)
+        manager = make_manager(cm_bot)
+        command = self._command(AsyncMock(return_value=True))
+        command.name = "slow"
+
+        await manager._execute_queued_command(command, mock_message(content="!slow", is_dm=True))
+
+        assert [d["command"] for e, d in seen if e == "command_run"] == ["slow"]
+
+    def test_capture_only_runs_are_not_emitted(self, cm_bot):
+        from modules.mesh_events import emit_command_run
+
+        seen = self._listen(cm_bot)
+        msg = mock_message(content="!wx")
+        msg.capture_sink = []
+        emit_command_run(cm_bot, msg, "wx", True, "x")
+        assert seen == []

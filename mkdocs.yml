@@ -72,6 +72,7 @@ nav:
     - Overview: service-plugins.md
     - Discord Bridge: discord-bridge.md
     - Telegram Bridge: telegram-bridge.md
+    - Webhooks: webhooks.md
     - Packet Capture: packet-capture.md
     - Map Uploader: map-uploader.md
     - Weather Service: weather-service.md

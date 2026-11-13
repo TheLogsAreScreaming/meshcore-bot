@@ -67,6 +67,7 @@ CANONICAL_NON_COMMAND_SECTIONS = frozenset({
     "Worldcup_Service",
     "Rate_Limits",
     "Webhook",
+    "Event_Webhooks",
     "RepeaterPrefixCollision_Service",
     "DiscordBridge",
     "TelegramBridge",
